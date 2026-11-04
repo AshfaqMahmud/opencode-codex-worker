@@ -20,3 +20,14 @@ All notable changes to this project are documented here. The format follows
 - Plugin options for binary path, sandbox, model, effort, timeouts, concurrency and environment.
 - Test suite covering argument building, process supervision, timeouts, cancellation, job
   bookkeeping, permission gating and output formatting.
+- Documentation set: architecture, tool reference, configuration, security, development,
+  troubleshooting, release process and design decisions.
+- `test/docs.test.ts`, which fails when a tool, option, internal link or changelog entry drifts out
+  of sync with the code.
+- Contributor guide, security policy, code of conduct, and issue/pull-request templates.
+
+### Changed
+
+- `@opencode/plugin` is declared as an optional peer dependency rather than a dependency. The host
+  provides it at runtime, and depending on it would pull non-optional `vite` and `electron` peers
+  into every install.

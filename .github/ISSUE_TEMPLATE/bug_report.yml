@@ -1,0 +1,83 @@
+name: Bug report
+description: Something does not load, hangs, fails, or produces the wrong result
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please redact tokens, prompts, and private paths before submitting.
+        For an exploitable security issue, use Security → Report a vulnerability instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The actual behaviour, including the tool call and any error text.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Configure ...
+        2. Ask OpenCode to ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: "`npm view opencode-codex-worker version`, or the commit you are running."
+    validations:
+      required: true
+  - type: input
+    id: opencode-version
+    attributes:
+      label: OpenCode version
+      description: "`opencode --version`"
+    validations:
+      required: true
+  - type: input
+    id: codex-version
+    attributes:
+      label: Codex CLI version
+      description: "`codex --version`"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and Node version
+      description: "For example macOS 15.2 / Node 24.1"
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: Plugin options and any `codex.*` permission rules. Remove secrets.
+      render: jsonc
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of `opencode run --standalone --print-logs --log-level debug "Say OK"`, filtered to relevant lines.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I redacted tokens, prompts and private paths.
+          required: true
+        - label: I searched existing issues.
+          required: true
+        - label: I am on the latest published version.
+          required: true

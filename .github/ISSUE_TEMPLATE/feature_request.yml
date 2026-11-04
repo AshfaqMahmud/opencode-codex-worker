@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a new tool, option, or behaviour
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This plugin stays deliberately narrow: delegate to Codex, supervise the process, report the
+        result. Proposals that fit that shape are welcome; proposals that turn it into a general
+        agent framework usually are not.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you unable to do today? Describe the workflow, not the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Tool name and inputs, option name and default, or the behaviour change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including doing nothing, or solving it with existing options such as `extraArgs`.
+  - type: textarea
+    id: api-impact
+    attributes:
+      label: API impact
+      description: Is this additive, or does it change an existing tool or option? Would it need a major version?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and the documentation.
+          required: true
+        - label: This cannot be achieved with the current options or permission rules.
+          required: true

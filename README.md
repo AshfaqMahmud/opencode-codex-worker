@@ -20,7 +20,8 @@ A single agent is a bottleneck. This plugin turns `codex exec` into a first-clas
 ## Requirements
 
 - OpenCode v2
-- The Codex CLI installed and authenticated (`codex login`), `codex --version` ≥ 0.160
+- The Codex CLI installed and authenticated (`codex login`). A recent release is required; tested
+  against `codex-cli` 0.166.0.
 - Node.js 20+ (only for local development)
 
 ## Install
@@ -145,6 +146,19 @@ Each call spawns `codex exec` with a private `--output-last-message` file and no
 5. parses the Codex session id from stderr so runs can be resumed,
 6. kills the whole process group on timeout, cancellation, or session interrupt.
 
+## Documentation
+
+| Document | Read it when |
+| --- | --- |
+| [Tools](./docs/tools.md) | Full parameter reference for every `codex_*` tool |
+| [Configuration](./docs/configuration.md) | Options and permission rules |
+| [Security](./docs/security.md) | Trust model, sandbox boundaries, environment exposure |
+| [Architecture](./docs/architecture.md) | Execution pipeline, job model, process supervision |
+| [Development](./docs/development.md) | Build, test, and load a local checkout |
+| [Troubleshooting](./docs/troubleshooting.md) | Something does not load, hangs, or gets denied |
+| [Design decisions](./docs/design-decisions.md) | Why the code looks the way it does |
+| [Releasing](./docs/releasing.md) | Versioning and publishing |
+
 ## Troubleshooting
 
 **`Codex CLI not found`** — the binary is not on `PATH`. Install Codex, or set `binary` to its absolute path (`which codex`).
@@ -162,10 +176,12 @@ Each call spawns `codex exec` with a private `--output-last-message` file and no
 ```sh
 npm install
 npm run typecheck
-npm test        # 47 tests, no network and no real Codex needed
+npm test        # offline: uses a fake codex binary, no account needed
 ```
 
-Tests use a fake `codex` executable, so they exercise argument building, process supervision, timeouts, cancellation, job bookkeeping, permission gating and output formatting without touching your Codex account.
+Tests cover argument building, process supervision, timeouts, cancellation, job bookkeeping,
+permission gating, output formatting, and documentation drift. See [docs/development.md](./docs/development.md)
+for the suite layout and for loading a local checkout into OpenCode.
 
 To try a local checkout, link it as a plugin:
 
@@ -175,6 +191,13 @@ cp -R src/*.ts .opencode/plugins/codex-worker/
 ```
 
 Then ask OpenCode: *"Call codex_status."*
+
+## Contributing
+
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first: the project is
+deliberately narrow, and a focused diff with a test and docs lands much faster than a large one.
+
+Security problems should go through [SECURITY.md](./SECURITY.md), not a public issue.
 
 ## License
 

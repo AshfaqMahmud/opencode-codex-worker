@@ -1,3 +1,10 @@
+/**
+ * OpenCode plugin entry point.
+ *
+ * Wires configuration, the job registry and the tool set together, then registers every tool under
+ * the `codex` namespace. The returned cleanup aborts running jobs and disposes the registration so a
+ * reload leaves no orphaned processes.
+ */
 import { Plugin } from "@opencode/plugin";
 import { resolveConfig } from "./config.js";
 import { JobManager } from "./jobs.js";

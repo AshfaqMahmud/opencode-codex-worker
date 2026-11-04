@@ -1,5 +1,13 @@
+/**
+ * Argv construction for the three Codex entry points: `exec`, `exec resume` and `exec review`.
+ *
+ * This module is the only place that knows the CLI's asymmetries. `exec` accepts `-s` for the
+ * sandbox, while `resume` and `review` do not and need `-c sandbox_mode="..."` instead. Options are
+ * always placed before positionals, and prompts are never interpolated into a shell string.
+ */
 import type { Effort, SandboxMode, WorkerConfig } from "./config.js";
 
+/** Inputs for `codex exec` and `codex exec resume`. */
 export interface TaskArgsInput {
   prompt: string;
   outputFile: string;
@@ -11,8 +19,10 @@ export interface TaskArgsInput {
   extraArgs?: string[];
 }
 
+/** What `codex exec review` should compare. */
 export type ReviewMode = "uncommitted" | "base" | "commit";
 
+/** Inputs for `codex exec review`. */
 export interface ReviewArgsInput {
   outputFile: string;
   sandbox: SandboxMode;
@@ -45,6 +55,11 @@ function commonFlags(input: {
  * `codex exec` and `codex exec resume` accept `-s`; `codex exec review` does not, so review and
  * resume fall back to the equivalent `sandbox_mode` config override.
  */
+/**
+ * Builds the argv for a task.
+ *
+ * A resumed run uses `exec resume <id>` plus a `sandbox_mode` override; a fresh run uses `exec -s`.
+ */
 export function buildTaskArgs(input: TaskArgsInput, config: WorkerConfig): string[] {
   const args = ["exec"];
   if (input.resume) {
@@ -58,6 +73,12 @@ export function buildTaskArgs(input: TaskArgsInput, config: WorkerConfig): strin
   return args;
 }
 
+/**
+ * Builds the argv for a review.
+ *
+ * @throws when `mode` is `base` without `base`, or `commit` without `commit`. Failing before spawn
+ * keeps the error attributable to the caller rather than to Codex.
+ */
 export function buildReviewArgs(input: ReviewArgsInput, config: WorkerConfig): string[] {
   const args = ["exec", "review", "-c", `sandbox_mode="${input.sandbox}"`];
   args.push(...commonFlags(input));

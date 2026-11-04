@@ -1,3 +1,13 @@
+/**
+ * Tool definitions and input validation.
+ *
+ * This module is framework-independent: it describes tools as plain objects so they can be unit
+ * tested without an OpenCode server. `index.ts` adapts them to `ctx.tool.transform`.
+ *
+ * Trust boundary: `execute` receives model-controlled input. Every field is validated here, the
+ * working directory is resolved and checked, and write-capable calls pass through the permission
+ * gate before any process starts.
+ */
 import {
   clampTimeout,
   isEffort,
@@ -14,6 +24,7 @@ import { toJobView, waitForJob } from "./jobs.js";
 import { runReview, runTask, type RunTaskInput } from "./runner.js";
 import type { ReviewMode } from "./args.js";
 
+/** The subset of OpenCode's tool context this plugin relies on. */
 export interface ToolCallContext {
   sessionID: string;
   agent?: string;
@@ -23,11 +34,13 @@ export interface ToolCallContext {
   progress?: (update: Record<string, unknown>) => Promise<void>;
 }
 
+/** What a tool returns: prose for the model plus machine-readable metadata. */
 export interface ToolResult {
   content: string;
   metadata?: Record<string, unknown>;
 }
 
+/** A permission assertion, structurally compatible with `ctx.permission.assert`. */
 export interface PermissionRequest {
   sessionID: string;
   agent?: string;
@@ -38,10 +51,12 @@ export interface PermissionRequest {
   metadata?: Record<string, unknown>;
 }
 
+/** Injection point for permission checks, injected so tools stay testable. */
 export interface PermissionGate {
   assert(request: PermissionRequest): Promise<void>;
 }
 
+/** Everything the tools need from the plugin runtime. */
 export interface ToolDeps {
   config: WorkerConfig;
   jobs: JobManager;
@@ -50,6 +65,7 @@ export interface ToolDeps {
   permission: PermissionGate;
 }
 
+/** A tool in framework-neutral form. Names are relative; the `codex` prefix is applied at registration. */
 export interface ToolDefinition {
   name: string;
   description: string;
@@ -57,6 +73,7 @@ export interface ToolDefinition {
   execute(input: unknown, context: ToolCallContext): Promise<ToolResult>;
 }
 
+/** Raised for invalid model input. The message is written to be actionable for the model. */
 export class ToolInputError extends Error {
   constructor(message: string) {
     super(message);
@@ -259,6 +276,12 @@ const REVIEW_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/**
+ * Builds the tool set.
+ *
+ * Ordering is presentation-only; OpenCode applies the namespace prefix at registration. Handlers
+ * never throw for a failed Codex run: they return the outcome so the model can react to it.
+ */
 export function createTools(deps: ToolDeps): ToolDefinition[] {
   return [
     {

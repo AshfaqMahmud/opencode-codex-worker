@@ -29,9 +29,12 @@
   },
   "files": [
     "src",
+    "docs",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
   ],
   "engines": {
     "node": ">=20"

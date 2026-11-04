@@ -1,11 +1,21 @@
+/**
+ * Background job bookkeeping.
+ *
+ * A job is a promise plus a process handle. The registry enforces concurrency, keeps a bounded tail
+ * of live output for previews, and prunes finished entries. It is intentionally in-memory: a job
+ * cannot outlive the server process, so persisting the record would only create zombies that report
+ * `running` forever.
+ */
 import { randomUUID } from "node:crypto";
 import type { SandboxMode, WorkerConfig } from "./config.js";
 import { TailBuffer } from "./exec.js";
 import type { JobSummaryView, OutcomeState, TaskOutcome } from "./format.js";
 import type { RunTaskInput } from "./runner.js";
 
+/** `running` before the executor settles, then the terminal outcome state. */
 export type JobState = "running" | OutcomeState;
 
+/** A live job: the serializable view plus a completion promise and a live output preview. */
 export interface Job extends Omit<JobSummaryView, "preview"> {
   readonly prompt: string;
   done: Promise<void>;
@@ -13,6 +23,7 @@ export interface Job extends Omit<JobSummaryView, "preview"> {
   previewText(): string;
 }
 
+/** Raised when `maxConcurrent` would be exceeded. The message names the current count and the limit. */
 export class JobLimitError extends Error {
   constructor(
     readonly running: number,
@@ -25,12 +36,17 @@ export class JobLimitError extends Error {
   }
 }
 
+/** Raised for an unknown job id, with a hint to list jobs. */
 export class JobNotFoundError extends Error {
   constructor(readonly jobID: string) {
     super(`No Codex job with id "${jobID}". Use codex_status to list jobs.`);
   }
 }
 
+/**
+ * The work a job performs. Injected so the registry can be tested without Codex, and so the plugin
+ * can pass `runTask` without `jobs.ts` importing the runner.
+ */
 export type JobExecutor = (
   input: RunTaskInput,
   hooks: { signal: AbortSignal; onLog: (chunk: string) => void },
@@ -51,6 +67,12 @@ function createJobID(): string {
   return `cx_${randomUUID().replace(/-/g, "").slice(0, 10)}`;
 }
 
+/**
+ * Registry of background jobs for one plugin instance.
+ *
+ * Not thread-safe by design: OpenCode runs plugin code on a single event loop, and all mutation
+ * happens synchronously around async boundaries.
+ */
 export class JobManager {
   private readonly jobs = new Map<string, JobRecord>();
 
@@ -65,6 +87,13 @@ export class JobManager {
     return count;
   }
 
+/**
+ * Starts a job and returns immediately.
+ *
+ * @throws {JobLimitError} when `maxConcurrent` jobs are already running. The executor's failures are
+ * captured on the job (`state: "failed"`, `error`) instead of rejecting, so a forgotten job never
+ * produces an unhandled rejection.
+ */
   start(input: RunTaskInput, label?: string): Job {
     const running = this.runningCount();
     if (running >= this.config.maxConcurrent) throw new JobLimitError(running, this.config.maxConcurrent);
@@ -120,6 +149,7 @@ export class JobManager {
     return [...this.jobs.values()].sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  /** Aborts a running job. Returns false when it had already finished. */
   cancel(jobID: string): boolean {
     const job = this.jobs.get(jobID);
     if (!job) throw new JobNotFoundError(jobID);
@@ -128,6 +158,7 @@ export class JobManager {
     return true;
   }
 
+  /** Aborts every running job and clears the registry. Called when the plugin unloads. */
   dispose(): void {
     for (const job of this.jobs.values()) {
       if (job.state === "running") job.controller.abort();

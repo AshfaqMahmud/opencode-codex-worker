@@ -1,7 +1,15 @@
+/**
+ * Human-readable rendering of task outcomes and jobs.
+ *
+ * The model reads these strings, so they are written for prose, not logs: a status line, the answer,
+ * the files touched, and diagnostics only when something went wrong.
+ */
 import type { SandboxMode } from "./config.js";
 
+/** Terminal states a Codex run can reach. */
 export type OutcomeState = "completed" | "failed" | "timed_out" | "cancelled";
 
+/** Everything the plugin returns about one run. */
 export interface TaskOutcome {
   state: OutcomeState;
   exitCode: number | null;
@@ -77,6 +85,7 @@ export function formatOutcome(outcome: TaskOutcome, maxChars: number): string {
   return lines.join("\n");
 }
 
+/** A resolved, serializable projection of a job, safe to format or return as metadata. */
 export interface JobSummaryView {
   id: string;
   label: string;

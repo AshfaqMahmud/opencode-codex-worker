@@ -1,8 +1,15 @@
+/**
+ * Working-tree snapshots used to report which files a Codex run touched.
+ *
+ * Everything here degrades quietly: outside a Git repository the helpers return `undefined` and the
+ * task proceeds without change reporting.
+ */
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
 
+/** One entry from `git status --porcelain`. */
 export interface GitChange {
   /** Porcelain status code, such as `M` or `??`. */
   status: string;

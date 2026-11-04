@@ -1,7 +1,15 @@
+/**
+ * Process supervision for the Codex CLI.
+ *
+ * Responsibilities: locate the binary, spawn without a shell, capture bounded output, enforce a
+ * timeout, and terminate the whole process group on timeout or abort. Nothing here knows about
+ * OpenCode or about jobs; it is plain Node.
+ */
 import { spawn, type ChildProcess } from "node:child_process";
 import { accessSync, constants, statSync } from "node:fs";
 import path from "node:path";
 
+/** Wraps a failure to start or resolve the Codex binary, rather than a Codex run that failed. */
 export class ExecError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
@@ -101,6 +109,7 @@ export interface ExecSpec {
   onData?: (stream: "stdout" | "stderr", chunk: string) => void;
 }
 
+/** The captured result of one finished process. Non-zero exits are results, not errors. */
 export interface ExecResult {
   exitCode: number | null;
   exitSignal: NodeJS.Signals | null;
@@ -113,6 +122,12 @@ export interface ExecResult {
   stderrTruncated: boolean;
 }
 
+/**
+ * A started process.
+ *
+ * `kill()` exists for callers that need to stop a job imperatively; it does not mark the run as
+ * aborted, so the result reports the true exit reason instead of a synthetic cancellation.
+ */
 export interface RunningExec {
   readonly promise: Promise<ExecResult>;
   /** Terminates the process group without marking the run as aborted. */
@@ -147,6 +162,13 @@ function terminate(child: ChildProcess): void {
   escalation.unref();
 }
 
+/**
+ * Spawns a process and resolves once it closes.
+ *
+ * The promise never rejects for a non-zero exit code and never rejects on timeout or abort: those
+ * are recorded in the result so callers can classify them. It rejects only when the process could
+ * not be started at all.
+ */
 export function startExec(spec: ExecSpec): RunningExec {
   const startedAt = Date.now();
   const limit = spec.captureLimit ?? TailBuffer.DEFAULT_LIMIT;

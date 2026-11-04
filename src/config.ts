@@ -1,9 +1,17 @@
+/**
+ * Configuration and path handling.
+ *
+ * Options arrive from `opencode.json(c)` as untyped JSON and are parsed defensively: unknown or
+ * malformed values fall back to defaults so a typo can never prevent the server from starting.
+ */
 import { statSync } from "node:fs";
 import path from "node:path";
 
+/** Sandbox modes accepted by Codex, in ascending order of capability. */
 export const SANDBOX_MODES = ["read-only", "workspace-write", "danger-full-access"] as const;
 export type SandboxMode = (typeof SANDBOX_MODES)[number];
 
+/** Reasoning effort values mapped to `model_reasoning_effort`. */
 export const EFFORTS = ["minimal", "low", "medium", "high"] as const;
 export type Effort = (typeof EFFORTS)[number];
 
@@ -38,6 +46,7 @@ export interface WorkerConfig {
 const FIFTEEN_MINUTES = 15 * 60_000;
 const ONE_HOUR = 60 * 60_000;
 
+/** Baseline configuration. Every field here is also a documented plugin option. */
 export const DEFAULT_CONFIG: WorkerConfig = {
   binary: "codex",
   defaultSandbox: "workspace-write",
@@ -51,10 +60,12 @@ export const DEFAULT_CONFIG: WorkerConfig = {
   env: {},
 };
 
+/** Type guard used to validate tool input and plugin options. */
 export function isSandboxMode(value: unknown): value is SandboxMode {
   return typeof value === "string" && (SANDBOX_MODES as readonly string[]).includes(value);
 }
 
+/** Type guard used to validate tool input and plugin options. */
 export function isEffort(value: unknown): value is Effort {
   return typeof value === "string" && (EFFORTS as readonly string[]).includes(value);
 }
@@ -127,6 +138,7 @@ export function resolveConfig(options: Record<string, unknown> = {}): WorkerConf
   return config;
 }
 
+/** Raised when a tool-supplied working directory is missing or is not a directory. */
 export class ResolveError extends Error {}
 
 /** Resolves a tool-provided `cwd` against the session directory and validates it exists. */
@@ -144,6 +156,12 @@ export function resolveWorkingDirectory(input: unknown, baseDirectory: string): 
   return resolved;
 }
 
+/**
+ * Resolves a requested timeout against the configured default and hard ceiling.
+ *
+ * Non-numeric or non-positive requests fall back to the default; anything above `maxTimeoutMs` is
+ * clamped, so a single tool call cannot outlive the operator's budget.
+ */
 export function clampTimeout(requested: unknown, config: WorkerConfig): number {
   const value = positiveNumber(requested);
   if (!value) return config.timeoutMs;

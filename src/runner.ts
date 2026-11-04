@@ -1,3 +1,10 @@
+/**
+ * The execution pipeline shared by tasks and reviews.
+ *
+ * One run means: resolve the binary, create a private `--output-last-message` file, snapshot Git,
+ * spawn, supervise, parse the session id, clean up. Failures in Codex are classified into an outcome;
+ * only infrastructure problems reject.
+ */
 import { randomUUID } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,6 +15,7 @@ import { ExecError, resolveBinary, startExec, TailBuffer } from "./exec.js";
 import { diffChanges, readGitChanges } from "./git.js";
 import type { OutcomeState, TaskOutcome } from "./format.js";
 
+/** A validated request to run a task. Constructed by the tools layer, never by a model directly. */
 export interface RunTaskInput {
   prompt: string;
   cwd: string;
@@ -23,6 +31,7 @@ export interface RunTaskInput {
   extraArgs?: string[];
 }
 
+/** A validated request to review a repository. */
 export interface RunReviewInput {
   cwd: string;
   sandbox: SandboxMode;
@@ -36,6 +45,7 @@ export interface RunReviewInput {
   extraArgs?: string[];
 }
 
+/** Streaming and cancellation hooks. `onLog` feeds live job previews. */
 export interface RunHooks {
   signal?: AbortSignal;
   onLog?: (chunk: string) => void;
@@ -119,6 +129,12 @@ async function execute(config: WorkerConfig, input: ExecuteInput): Promise<TaskO
   }
 }
 
+/**
+ * Runs one Codex task to completion.
+ *
+ * Defaults from the plugin configuration are applied here rather than in the tools layer, so both
+ * the synchronous and the background paths behave identically.
+ */
 export function runTask(config: WorkerConfig, input: RunTaskInput, hooks: RunHooks = {}): Promise<TaskOutcome> {
   const timeoutMs = clampTimeout(input.timeoutMs, config);
   const model = input.model ?? config.defaultModel;
@@ -147,6 +163,7 @@ export function runTask(config: WorkerConfig, input: RunTaskInput, hooks: RunHoo
   });
 }
 
+/** Runs one Codex review to completion, using the shared pipeline. */
 export function runReview(config: WorkerConfig, input: RunReviewInput, hooks: RunHooks = {}): Promise<TaskOutcome> {
   const timeoutMs = clampTimeout(input.timeoutMs, config);
   const model = input.model ?? config.defaultModel;
