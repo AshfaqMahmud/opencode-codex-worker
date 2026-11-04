@@ -1,0 +1,63 @@
+{
+  "name": "opencode-codex-worker",
+  "version": "0.1.0",
+  "description": "Delegate coding tasks from OpenCode to the Codex CLI: synchronous tasks, background jobs, cancellation, and code review.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Ashfaq Mahmud",
+  "homepage": "https://github.com/AshfaqMahmud/opencode-codex-worker#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshfaqMahmud/opencode-codex-worker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AshfaqMahmud/opencode-codex-worker/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "codex",
+    "openai",
+    "agent",
+    "worker",
+    "subagent",
+    "delegation"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "test:watch": "tsx --test --watch test/*.test.ts",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.0.0 <3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@opencode/plugin": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@opencode/plugin": "^2.0.32",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
